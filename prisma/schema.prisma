@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model users {
+  id String @id @default(uuid())
+  username String @unique
+  email String @unique
+  hashed_password String
+  full_name String?
+  avatar_url String?
+  refresh_token String?
+  created_at DateTime @default(now())
+  chats chats[] @relation("chat_members")
+  send_messages messages[]
+  sent_requests friend_requests[] @relation("SentRequests")
+  received_requests friend_requests[] @relation("ReceivedRequests") 
+  blocked_by block_request[] @relation("BlockedRequests")
+  blocking block_request[] @relation("BlockerRequests")
+}
+
+model chats {
+  id String @id @default(uuid())
+  name String?
+  last_message String?
+  last_activity DateTime?
+  created_at DateTime @default(now())
+  members users[] @relation("chat_members")
+  messages messages[]
+}
+
+model messages {
+  id String @id @default(uuid())
+  text String
+  created_at DateTime @default(now())
+  sender_id String
+  chat_id String
+  status MessageStatus @default(SENT)
+
+  sender users @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+  chat chats @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+   @@index([chat_id, created_at(sort: Desc)])
+}
+
+model friend_requests {
+  id String @id @default(uuid())
+  sender_id  String
+  receiver_id String
+  status FriendRequestStatus @default(PENDING)
+  created_at DateTime @default(now())
+  updated_at DateTime?
+
+  sender users @relation(name: "SentRequests",fields: [sender_id], references: [id] , onDelete: Cascade)
+  receiver users @relation(name: "ReceivedRequests",fields: [receiver_id], references: [id], onDelete: Cascade)
+
+}
+
+model block_request {
+  id String @id @default(uuid())
+  blocker_id String
+  blocked_id String
+  created_at DateTime @default(now())
+  blocker users @relation("BlockerRequests",fields: [blocker_id], references: [id], onDelete: Cascade)
+  blocked users @relation("BlockedRequests",fields: [blocked_id], references: [id], onDelete: Cascade)
+}
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
