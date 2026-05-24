@@ -1,12 +1,14 @@
 import { ApiError } from "../util/apiErrors.mjs";
 
 export const errorHandler = (err, req, res, next) => {
-    console.error(err);
-    if (err instanceof ApiError) {
-        return res.status(err.statusCode).json({ message: err.message });
-    }
+	console.error(err);
+	if (err instanceof ApiError) {
+		return res
+			.status(err.statusCode)
+			.json({ message: err.message, code: err.code });
+	}
 
-    return res.status(500).json({
-        message: "Internal Server Error",
-    });
+	return res.status(500).json({
+		message: "Internal Server Error",
+	});
 };

@@ -7,24 +7,31 @@ export const userRouter = Router();
 
 userRouter.post("/register", userController.createUser);
 userRouter.post("/login", userController.login);
+userRouter.post("/refresh-token", userController.refreshTokens);
 
 userRouter.delete(
-    "/delete-account",
-    verifyJWT,
-    verifyAuthReq,
-    userController.deleteAccount,
+	"/delete-account",
+	verifyJWT,
+	verifyAuthReq,
+	userController.deleteAccount,
 );
 userRouter.patch(
-    "/update/username",
-    verifyJWT,
-    verifyAuthReq,
-    userController.updateUsername,
+	"/update/username",
+	verifyJWT,
+	verifyAuthReq,
+	userController.updateUsername,
 );
 userRouter.patch(
-    "/update/full-name",
-    verifyJWT,
-    verifyAuthReq,
-    userController.updateFullName,
+	"/update/full-name",
+	verifyJWT,
+	verifyAuthReq,
+	userController.updateFullName,
 );
 userRouter.post("/logout", verifyJWT, verifyAuthReq, userController.logout);
-userRouter.get("/", userController.searchUser);
+userRouter.get("/", verifyJWT, verifyAuthReq, userController.searchUser);
+userRouter.get(
+	"/current-user",
+	verifyJWT,
+	verifyAuthReq,
+	userController.getCurrentUser,
+);

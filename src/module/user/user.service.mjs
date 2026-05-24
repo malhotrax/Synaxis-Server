@@ -6,11 +6,13 @@ import {
 	Conflict,
 	InternalServerError,
 	NotFound,
+	TokenExpired,
 	Unauthorized,
 } from "../../util/apiErrors.mjs";
+import { friendsService } from "../friends/friends.service.mjs";
 
 export const userService = {
-	generateTokens: (user) => {
+	generateTokens: async (user) => {
 		const accessToken = jwt.sign(
 			{
 				id: user.id,
@@ -29,6 +31,8 @@ export const userService = {
 				expiresIn: config.REFRESH_TOKEN_EXPIRY,
 			},
 		);
+
+		await userRepository.addRefreshToken(user.id, refreshToken);
 		return {
 			accessToken,
 			refreshToken,
@@ -48,11 +52,10 @@ export const userService = {
 			hashedPassword,
 			username,
 		});
-		const tokens = userService.generateTokens(user);
+		const tokens = await userService.generateTokens(user);
 		if (!tokens) {
 			throw new InternalServerError("Failed to generate token");
 		}
-		await userRepository.addRefreshToken(user.id, tokens.refreshToken);
 		return {
 			user: user,
 			accessToken: tokens.accessToken,
@@ -82,12 +85,12 @@ export const userService = {
 		}
 		const isPasswordValid = await bcrypt.compare(
 			password,
-			user.hashed_password,
+			user.hashedPassword,
 		);
 		if (!isPasswordValid) {
 			throw new Unauthorized("Wrong password");
 		}
-		const tokens = userService.generateTokens(user);
+		const tokens = await userService.generateTokens(user);
 		if (!tokens) {
 			throw new InternalServerError("Failed to generate tokens");
 		}
@@ -97,16 +100,58 @@ export const userService = {
 				id: user.id,
 				email: user.email,
 				username: user.username,
-				fullName: user.full_name,
-				createdAt: user.created_at,
-				avatarUrl: user.avatar_url,
+				fullName: user.fullName,
+				createdAt: user.createdAt,
+				avatarUrl: user.avatarUrl,
 			},
 			accessToken: tokens.accessToken,
 			refreshToken: tokens.refreshToken,
 		};
 		return authUser;
 	},
-	searchUser: async ({ query, limit }) => {
-		return await userRepository.searchUser({ query, limit });
+	searchUser: async ({ query, limit, yourId }) => {
+		const result = await userRepository.searchUser({ query, limit });
+		if (result.length == 0) return [];
+		const users = [];
+		const friends = await friendsService.getFriends(yourId);
+		for (const user of result) {
+			users.push({
+				...user,
+				isFriend: friends.includes(user.id),
+			});
+		}
+		return users;
+	},
+	refreshTokens: async (refreshToken) => {
+		let decodedToken;
+		try {
+			decodedToken = await jwt.verify(
+				refreshToken,
+				config.REFRESH_TOKEN_SECRET,
+			);
+		} catch (error) {
+			if (error instanceof jwt.TokenExpiredError) {
+				throw new TokenExpired("Refresh token expired");
+			}
+			throw new Unauthorized("Invalid refresh token");
+		}
+
+		const user = await userRepository.findById(decodedToken?.id);
+		if (!user) {
+			throw new Unauthorized("No user found with associated token");
+		}
+		if (user.refreshToken !== refreshToken) {
+			throw new Unauthorized(
+				"Invalid refresh token: Not matched with actual token",
+			);
+		}
+		const tokens = await userService.generateTokens(user);
+		if (!tokens) {
+			throw new InternalServerError("Failed to generate tokens");
+		}
+		return tokens;
+	},
+	logout: async (userId) => {
+		await userRepository.removeRefreshToken(userId);
 	},
 };

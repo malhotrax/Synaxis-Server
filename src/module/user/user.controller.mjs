@@ -1,4 +1,9 @@
-import { BadRequest, NotFound, Unauthorized } from "../../util/apiErrors.mjs";
+import {
+	BadRequest,
+	InternalServerError,
+	NotFound,
+	Unauthorized,
+} from "../../util/apiErrors.mjs";
 import { asyncWrapper } from "../../util/asyncWrapper.mjs";
 import { validateInput } from "../../util/validateInput.mjs";
 import { userService } from "./user.service.mjs";
@@ -22,9 +27,9 @@ export const userController = {
 			id: authUser.user.id,
 			email: authUser.user.email,
 			username: authUser.user.username,
-			fullName: authUser.user.full_name,
-			createdAt: authUser.user.created_at,
-			avatarUrl: authUser.user.avatar_url,
+			fullName: authUser.user.fullName,
+			createdAt: authUser.user.createdAt,
+			avatarUrl: authUser.user.avatarUrl,
 		};
 		return res.status(200).json({
 			user: user,
@@ -48,7 +53,10 @@ export const userController = {
 			refreshToken: authUser.refreshToken,
 		});
 	}),
-	logout: asyncWrapper(async (req, res) => {}),
+	logout: asyncWrapper(async (req, res) => {
+		await userService.logout(req.user.id);
+		return res.status(200).json({ message: "Logout successfully" });
+	}),
 	deleteAccount: asyncWrapper(async (req, res) => {
 		await userService.deleteAccount(req.user.id);
 		return res
@@ -79,16 +87,44 @@ export const userController = {
 	}),
 
 	searchUser: asyncWrapper(async (req, res) => {
-		console.log(req.query);
 		const { query, limit = 20 } = req.query;
 		if (!query) {
 			throw new BadRequest("Please enter valid query");
 		}
-		const users = await userService.searchUser({ query, limit });
+
+		const users = await userService.searchUser({
+			query,
+			limit,
+			yourId: req.user.id,
+		});
+		console.log(users);
 		if (!users || users.length < 0) {
 			throw new NotFound("No user found");
 		}
-		console.log(users);
 		return res.status(200).json({ users: users });
+	}),
+	getCurrentUser: asyncWrapper(async (req, res) => {
+		const currentUser = req.user;
+		return res.status(200).json({
+			user: {
+				id: currentUser.id,
+				username: currentUser.username,
+				fullName: currentUser.fullName,
+				avatarUrl: currentUser.avatarUrl,
+				email: currentUser.email,
+			},
+		});
+	}),
+	refreshTokens: asyncWrapper(async (req, res) => {
+		const { refreshToken } = req.body;
+		if (!refreshToken) {
+			throw new BadRequest("Refresh token not found.");
+		}
+		const tokens = await userService.refreshTokens(refreshToken);
+
+		return res.status(200).json({
+			accessToken: tokens.accessToken,
+			refreshToken: tokens.refreshToken,
+		});
 	}),
 };

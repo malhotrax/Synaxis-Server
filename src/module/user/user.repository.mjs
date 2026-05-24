@@ -9,15 +9,15 @@ export const userRepository = {
 				data: {
 					email: email.toLowerCase().trim(),
 					username: username.toLowerCase().trim(),
-					hashed_password: hashedPassword.trim(),
+					hashedPassword: hashedPassword.trim(),
 				},
 				select: {
 					id: true,
 					email: true,
 					username: true,
-					full_name: true,
-					created_at: true,
-					avatar_url: true,
+					fullName: true,
+					createdAt: true,
+					avatarUrl: true,
 				},
 			});
 		} catch (error) {
@@ -28,11 +28,19 @@ export const userRepository = {
 		try {
 			return await prisma.users.update({
 				where: { id },
-				data: { refresh_token: refreshToken },
+				data: { refreshToken: refreshToken },
 			});
 		} catch (error) {
 			handleDatabaseError(error);
 		}
+	},
+	removeRefreshToken: async (userId) => {
+		try {
+			await prisma.users.update({
+				where: { id: userId },
+				data: { refreshToken: "" },
+			});
+		} catch (error) {}
 	},
 	findUserByEmailOrUsername: async ({ email, username }) => {
 		try {
@@ -68,7 +76,7 @@ export const userRepository = {
 		try {
 			return await prisma.users.update({
 				where: { id: userId },
-				data: { full_name: fullName },
+				data: { fullName: fullName.trim() },
 			});
 		} catch (error) {
 			handleDatabaseError(error);
@@ -113,7 +121,7 @@ export const userRepository = {
 							},
 						},
 						{
-							full_name: {
+							fullName: {
 								contains: query,
 								mode: "insensitive",
 							},
@@ -122,9 +130,10 @@ export const userRepository = {
 				},
 				take: Number(limit),
 				select: {
+					id: true,
 					username: true,
-					avatar_url: true,
-					full_name: true,
+					avatarUrl: true,
+					fullName: true,
 				},
 			});
 		} catch (error) {
