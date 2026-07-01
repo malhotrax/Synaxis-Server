@@ -10,6 +10,7 @@ import {
 	Unauthorized,
 } from "../../util/apiErrors.mjs";
 import { friendsService } from "../friends/friends.service.mjs";
+import { friendsRepository } from "../friends/friends.repository.mjs";
 
 export const userService = {
 	generateTokens: async (user) => {
@@ -113,11 +114,14 @@ export const userService = {
 		const result = await userRepository.searchUser({ query, limit });
 		if (result.length == 0) return [];
 		const users = [];
-		const friends = await friendsService.getFriends(yourId);
+
 		for (const user of result) {
 			users.push({
 				...user,
-				isFriend: friends.includes(user.id),
+				isFriend: await friendsService.isFriend({
+					friendId: user.id,
+					yourId,
+				}),
 			});
 		}
 		return users;
@@ -153,5 +157,16 @@ export const userService = {
 	},
 	logout: async (userId) => {
 		await userRepository.removeRefreshToken(userId);
+	},
+	findByUsername: async (username) => {
+		return await userRepository.findByUsername(username);
+	},
+
+	findByEmail: async (email) => {
+		return await userRepository.findByEmail(email);
+	},
+
+	findById: async (id) => {
+		return await userRepository.findById(id);
 	},
 };

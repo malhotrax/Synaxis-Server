@@ -109,12 +109,15 @@ export const friendsRepository = {
 			handleDatabaseError(error);
 		}
 	},
-	getFriends: async (userId) => {
+	getFriends: async ({ userId, cursor, limit }) => {
 		try {
-			const friends = await prisma.friendships.findMany({
+			const pageSize = limit ? parseInt(limit, 10) : 10;
+
+			const result = await prisma.friendships.findMany({
 				where: {
 					OR: [{ userAId: userId }, { userBId: userId }],
 				},
+				take: pageSize + 1,
 				select: {
 					id: true,
 					createdAt: true,
@@ -139,18 +142,32 @@ export const friendsRepository = {
 						},
 					},
 				},
+				cursor: cursor ? { createdAt: cursor } : undefined,
+				skip: cursor ? 1 : undefined,
 			});
-			return friends.map((friendship) => {
+			const friends = result.map((friendship) => {
 				const friend =
 					friendship.userAId === userId
 						? friendship.userB
 						: friendship.userA;
 				return {
 					id: friendship.id,
-					createdAt: friendship.createdAt,
 					friend: friend,
+					createdAt: friendship.createdAt,
 				};
 			});
+
+			const hasMore = friends.length > pageSize;
+			const nextCursor =
+				hasMore && friends.length > 0
+					? friends[friends.length - 1].friend.id
+					: null;
+
+			return {
+				friends: friends,
+				hasMore: hasMore,
+				nextCursor: nextCursor,
+			};
 		} catch (error) {
 			handleDatabaseError(error);
 		}
@@ -158,11 +175,15 @@ export const friendsRepository = {
 	isFriend: async ({ yourId, friendId }) => {
 		try {
 			const [userAId, userBId] = canonicalPair(yourId, friendId);
-			return await prisma.friendships.findUnique({
+			const areFriends = await prisma.friendships.findUnique({
 				where: {
 					userAId_userBId: { userAId, userBId },
 				},
 			});
+			if (areFriends === null) {
+				return false;
+			}
+			return true;
 		} catch (error) {
 			handleDatabaseError(error);
 		}

@@ -7,6 +7,8 @@ import helmet from "helmet";
 
 import compression from "compression";
 import { friendsRouter } from "./module/friends/friends.routes.mjs";
+import { chatRouter } from "./module/chat/chat.route.mjs";
+import { messageRouter } from "./module/message/message.route.mjs";
 
 export const app = express();
 app.use(compression());
@@ -17,6 +19,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/friends", friendsRouter);
+app.use("/api/v1/chat", chatRouter);
+app.use("/api/v1/message", messageRouter);
 
 app.get("/hello", (req, res) => {
 	return res.send("Hello");

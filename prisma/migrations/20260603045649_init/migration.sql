@@ -34,6 +34,7 @@ CREATE TABLE "messages" (
     "id" TEXT NOT NULL,
     "text" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "sender_id" TEXT NOT NULL,
     "chat_id" TEXT NOT NULL,
     "status" "MessageStatus" NOT NULL DEFAULT 'SENT',
@@ -73,11 +74,11 @@ CREATE TABLE "block_request" (
 );
 
 -- CreateTable
-CREATE TABLE "_chat_members" (
+CREATE TABLE "_chatsTousers" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
 
-    CONSTRAINT "_chat_members_AB_pkey" PRIMARY KEY ("A","B")
+    CONSTRAINT "_chatsTousers_AB_pkey" PRIMARY KEY ("A","B")
 );
 
 -- CreateIndex
@@ -85,6 +86,9 @@ CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE INDEX "chats_last_activity_idx" ON "chats"("last_activity" DESC);
 
 -- CreateIndex
 CREATE INDEX "messages_chat_id_created_at_idx" ON "messages"("chat_id", "created_at" DESC);
@@ -105,7 +109,7 @@ CREATE UNIQUE INDEX "friendships_user_a_id_user_b_id_key" ON "friendships"("user
 CREATE UNIQUE INDEX "block_request_blocked_id_blocker_id_key" ON "block_request"("blocked_id", "blocker_id");
 
 -- CreateIndex
-CREATE INDEX "_chat_members_B_index" ON "_chat_members"("B");
+CREATE INDEX "_chatsTousers_B_index" ON "_chatsTousers"("B");
 
 -- AddForeignKey
 ALTER TABLE "messages" ADD CONSTRAINT "messages_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -132,7 +136,7 @@ ALTER TABLE "block_request" ADD CONSTRAINT "block_request_blocker_id_fkey" FOREI
 ALTER TABLE "block_request" ADD CONSTRAINT "block_request_blocked_id_fkey" FOREIGN KEY ("blocked_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_chat_members" ADD CONSTRAINT "_chat_members_A_fkey" FOREIGN KEY ("A") REFERENCES "chats"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_chatsTousers" ADD CONSTRAINT "_chatsTousers_A_fkey" FOREIGN KEY ("A") REFERENCES "chats"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_chat_members" ADD CONSTRAINT "_chat_members_B_fkey" FOREIGN KEY ("B") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_chatsTousers" ADD CONSTRAINT "_chatsTousers_B_fkey" FOREIGN KEY ("B") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

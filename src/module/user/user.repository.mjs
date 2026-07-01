@@ -40,7 +40,9 @@ export const userRepository = {
 				where: { id: userId },
 				data: { refreshToken: "" },
 			});
-		} catch (error) {}
+		} catch (error) {
+			handleDatabaseError(error);
+		}
 	},
 	findUserByEmailOrUsername: async ({ email, username }) => {
 		try {

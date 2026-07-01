@@ -54,17 +54,21 @@ export const friendController = {
 		await friendsService.deleteFriendRequestById(id);
 	}),
 	getFriends: asyncWrapper(async (req, res) => {
-		const friends = await friendsService.getFriends(req.user.id);
-		if (friends.length === 0) {
-			throw new NotFound("No friend found");
-		}
-		return res.status(200).json({ friends });
+		const { cursor, limit } = req.query;
+		const friends = await friendsService.getFriends({
+			userId: req.user.id,
+			cursor: cursor,
+			limit: limit,
+		});
+		console.log(friends);
+		return res.status(200).json({
+			items: friends.friends,
+			hasMore: friends.hasMore,
+			nextCursor: friends.nextCursor,
+		});
 	}),
 	getFriendRequests: asyncWrapper(async (req, res) => {
 		const requests = await friendsService.getFriendRequests(req.user.id);
-		if (requests.length === 0) {
-			throw new NotFound("No requests found");
-		}
 		return res.status(200).json({ requests });
 	}),
 };

@@ -42,8 +42,8 @@ export const friendsService = {
 		}
 		await friendsRepository.removeFriend({ yourId, friendId });
 	},
-	getFriends: async (userId) => {
-		return await friendsRepository.getFriends(userId);
+	getFriends: async ({ userId, cursor, limit }) => {
+		return await friendsRepository.getFriends({ userId, cursor, limit });
 	},
 	isFriend: async ({ yourId, friendId }) => {
 		return await friendsRepository.isFriend({ yourId, friendId });

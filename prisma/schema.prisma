@@ -22,7 +22,7 @@ model users {
   avatarUrl String? @map("avatar_url")
   refreshToken String? @map("refresh_token")
   createdAt DateTime @default(now())  @map("created_at")
-  chats chats[] @relation("chat_members")
+  chats chats[]
   sendMessages messages[] 
   sentRequests friend_requests[] @relation("SentRequests")
   receivedRequests friend_requests[] @relation("ReceivedRequests") 
@@ -39,9 +39,14 @@ model chats {
   lastMessage String? @map("last_message")
   lastActivity DateTime? @map("last_activity")
   createdAt DateTime @default(now()) @map("created_at")
-  members users[] @relation("chat_members")
+  avatarUrl String? 
+  members users[]
   messages messages[]
+
+  @@index([lastActivity(sort: Desc)])
+
 }
+
 
 model messages {
   id String @id @default(uuid())
@@ -104,3 +109,4 @@ enum FriendRequestStatus {
   PENDING
   REJECTED
 }
+
